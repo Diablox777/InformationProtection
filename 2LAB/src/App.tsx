@@ -33,49 +33,40 @@ const App = () => {
     return encrypted.join(",");
   };
 
-// Вспомогательная функция для нахождения обратного числа по модулю с использованием расширенного алгоритма Евклида
-const modInverse = (a: bigint, m: bigint): bigint => {
-  const m0 = m;
-  let y = 0n, x = 1n;
+  // Вспомогательная функция для нахождения обратного числа по модулю с использованием расширенного алгоритма Евклида
+  const modInverse = (a: bigint, m: bigint): bigint => {
+    let [m0, x0, x1] = [m, 0n, 1n];
+    if (m === 1n) return 0n;
 
-  if (m === 1n) return 0n;
+    while (a > 1n) {
+      const q = a / m;
+      [m, a] = [a % m, m];
+      [x0, x1] = [x1 - q * x0, x0];
+    }
 
-  while (a > 1n) {
-    const q = a / m;
-    let t = m;
+    if (x1 < 0n) x1 += m0;
+    return x1;
+  };
 
-    m = a % m;
-    a = t;
-    t = y;
+  const shamirDecrypt = (data: string): string => {
+    const p = 257n;
+    const c1 = 3n;
+    const c2 = 5n;
 
-    y = x - q * y;
-    x = t;
-  }
+    // Расчет обратного элемента для c1 * c2 по модулю (p-1)
+    const inverse = modInverse(c1 * c2, p - 1n);
 
-  if (x < 0n) x += m0;
+    // Расшифровываем каждый символ
+    const decrypted = data
+      .split(",")
+      .map((char) =>
+        String.fromCharCode(
+          Number(modPow(BigInt(char), inverse, p))
+        )
+      );
 
-  return x;
-};
-
-const shamirDecrypt = (data: string): string => {
-  const p = 257n;
-  const c1 = 3n;
-  const c2 = 5n;
-
-  // Расчет обратного элемента для c1 * c2 по модулю (p-1)
-  const inverse = modInverse(c1 * c2, p - 1n);
-
-  // Расшифровываем каждый символ
-  const decrypted = data
-    .split(",")
-    .map((char) =>
-      String.fromCharCode(
-        Number(modPow(BigInt(char), inverse, p))
-      )
-    );
-
-  return decrypted.join("");
-};
+    return decrypted.join("");
+  };
 
   // ElGamal Encryption/Decryption Example
   const elGamalEncrypt = (data: string): string => {
@@ -147,7 +138,7 @@ const shamirDecrypt = (data: string): string => {
     const n = p * q;
     const e = 17n;
     const phi = (p - 1n) * (q - 1n);
-    const d = modPow(e, -1n, phi);
+    const d = modInverse(e, phi);
 
     const decrypted = data
       .split(",")
