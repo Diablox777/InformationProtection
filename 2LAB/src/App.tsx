@@ -4,6 +4,7 @@ const App = () => {
   const [data, setData] = useState<string>("");
   const [encryptedData, setEncryptedData] = useState<string>("");
   const [decryptedData, setDecryptedData] = useState<string>("");
+  const [useRandomKeys, setUseRandomKeys] = useState<boolean>(false);
 
   // Helper function for modular exponentiation
   const modPow = (base: bigint, exp: bigint, mod: bigint): bigint => {
@@ -34,11 +35,16 @@ const App = () => {
     return x1;
   };
 
+  // Generate random BigInt within a range
+  const randomBigInt = (min: number, max: number): bigint => {
+    return BigInt(Math.floor(Math.random() * (max - min + 1)) + min);
+  };
+
   // Shamir's Secret Sharing Encryption/Decryption Example
   const shamirEncrypt = (data: string): string => {
-    const p = 257n; // Prime number
-    const c1 = 3n; // First private key
-    const c2 = 5n; // Second private key
+    const p = useRandomKeys ? randomBigInt(257, 1021) : 257n; // Prime number
+    const c1 = useRandomKeys ? randomBigInt(2, 50) : 3n; // First private key
+    const c2 = useRandomKeys ? randomBigInt(2, 50) : 5n; // Second private key
 
     // Encrypt each character
     const encrypted = Array.from(data).map((char) =>
@@ -49,9 +55,9 @@ const App = () => {
   };
 
   const shamirDecrypt = (data: string): string => {
-    const p = 257n;
-    const c1 = 3n;
-    const c2 = 5n;
+    const p = useRandomKeys ? randomBigInt(257, 1021) : 257n;
+    const c1 = useRandomKeys ? randomBigInt(2, 50) : 3n;
+    const c2 = useRandomKeys ? randomBigInt(2, 50) : 5n;
 
     // Calculate modular inverse of c1 * c2 modulo (p-1)
     const inverse = modInverse(c1 * c2, p - 1n);
@@ -60,9 +66,7 @@ const App = () => {
     const decrypted = data
       .split(",")
       .map((char) =>
-        String.fromCharCode(
-          Number(modPow(BigInt(char), inverse, p))
-        )
+        String.fromCharCode(Number(modPow(BigInt(char), inverse, p)))
       );
 
     return decrypted.join("");
@@ -70,12 +74,12 @@ const App = () => {
 
   // ElGamal Encryption/Decryption Example
   const elGamalEncrypt = (data: string): string => {
-    const p = 257n;
-    const g = 3n;
-    const x = 5n;
+    const p = useRandomKeys ? randomBigInt(257, 1021) : 257n;
+    const g = useRandomKeys ? randomBigInt(2, 100) : 3n;
+    const x = useRandomKeys ? randomBigInt(2, 100) : 5n;
     const y = modPow(g, x, p);
 
-    const k = 7n; // Secret key
+    const k = useRandomKeys ? randomBigInt(2, 100) : 7n; // Secret key
     const c1 = modPow(g, k, p);
 
     // Encrypt each character
@@ -89,8 +93,8 @@ const App = () => {
   };
 
   const elGamalDecrypt = (data: string): string => {
-    const p = 257n;
-    const x = 5n;
+    const p = useRandomKeys ? randomBigInt(257, 1021) : 257n;
+    const x = useRandomKeys ? randomBigInt(2, 100) : 5n;
 
     // Decrypt each character
     const decrypted = data.split(";").map((pair) => {
@@ -104,25 +108,25 @@ const App = () => {
 
   // Vernam Cipher (XOR Cipher) Encryption/Decryption Example
   const vernamEncrypt = (data: string): string => {
-    const key = 42; // Simple XOR key
-    const encrypted = Array.from(data).map(
-      (char) => String.fromCharCode(char.charCodeAt(0) ^ key)
+    const key = useRandomKeys ? Math.floor(Math.random() * 256) : 42; // Simple XOR key
+    const encrypted = Array.from(data).map((char) =>
+      String.fromCharCode(char.charCodeAt(0) ^ key)
     );
     return encrypted.join("");
   };
 
   const vernamDecrypt = (data: string): string => {
-    const key = 42; // Use the same key
-    const decrypted = Array.from(data).map(
-      (char) => String.fromCharCode(char.charCodeAt(0) ^ key)
+    const key = useRandomKeys ? Math.floor(Math.random() * 256) : 42; // Use the same key
+    const decrypted = Array.from(data).map((char) =>
+      String.fromCharCode(char.charCodeAt(0) ^ key)
     );
     return decrypted.join("");
   };
 
   // RSA Encryption/Decryption Example
   const rsaEncrypt = (data: string): string => {
-    const p = 61n;
-    const q = 53n;
+    const p = useRandomKeys ? randomBigInt(61, 101) : 61n;
+    const q = useRandomKeys ? randomBigInt(53, 103) : 53n;
     const n = p * q;
     const e = 17n;
     const encrypted = Array.from(data).map((char) =>
@@ -132,8 +136,8 @@ const App = () => {
   };
 
   const rsaDecrypt = (data: string): string => {
-    const p = 61n;
-    const q = 53n;
+    const p = useRandomKeys ? randomBigInt(61, 101) : 61n;
+    const q = useRandomKeys ? randomBigInt(53, 103) : 53n;
     const n = p * q;
     const e = 17n;
     const phi = (p - 1n) * (q - 1n);
@@ -214,109 +218,113 @@ const App = () => {
     setDecryptedData(result);
   };
 
+  // Toggle between fixed and random keys
+  const toggleKeyType = () => {
+    setUseRandomKeys((prev) => !prev);
+  };
+
   return (
-    <div className="p-10 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">File Encryption</h1>
+    <div className="container mx-auto p-10 max-w-[1100px]">
+      <h1 className="text-2xl font-bold mb-5">Encryption and Decryption</h1>
 
-      <div className="mb-4">
-        <input
-          type="file"
-          accept=".txt,.json,.csv,.xml" // Add any file types you need
-          onChange={handleFileUpload}
-        />
-      </div>
-
+      <input
+        type="file"
+        onChange={handleFileUpload}
+        className="mb-5"
+      />
       <textarea
-        className="w-full p-2 border mb-4"
-        rows={4}
         value={data}
         onChange={(e) => setData(e.target.value)}
-        placeholder="Enter data to encrypt"
+        rows={5}
+        className="w-full p-2 mb-5 border border-gray-300"
+        placeholder="Enter text or upload a file"
       />
 
-      <div className="mb-4">
+      <div className="mb-5">
         <button
-          className="bg-blue-500 text-white px-4 py-2 mr-2"
+          onClick={toggleKeyType}
+          className="bg-blue-500 text-white py-2 px-4 rounded mb-5"
+        >
+          {useRandomKeys ? "Switch to Fixed Keys" : "Switch to Random Keys"}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <button
           onClick={() => handleEncrypt("shamir")}
+          className="bg-green-500 text-white py-2 px-4 rounded"
         >
-          Encrypt with Shamir
+          Encrypt (Shamir)
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 mr-2"
-          onClick={() => handleEncrypt("elgamal")}
-        >
-          Encrypt with ElGamal
-        </button>
-        <button
-          className="bg-blue-500 text-white px-4 py-2 mr-2"
-          onClick={() => handleEncrypt("vernam")}
-        >
-          Encrypt with Vernam
-        </button>
-        <button
-          className="bg-blue-500 text-white px-4 py-2"
-          onClick={() => handleEncrypt("rsa")}
-        >
-          Encrypt with RSA
-        </button>
-      </div>
-
-      <textarea
-        className="w-full p-2 border mb-4"
-        rows={4}
-        value={encryptedData}
-        onChange={(e) => setEncryptedData(e.target.value)}
-        placeholder="Encrypted data will appear here"
-      />
-
-      <div className="mb-4">
-        <button
-          className="bg-green-500 text-white px-4 py-2 mr-2"
           onClick={() => handleDecrypt("shamir")}
+          className="bg-red-500 text-white py-2 px-4 rounded"
         >
-          Decrypt with Shamir
+          Decrypt (Shamir)
         </button>
         <button
-          className="bg-green-500 text-white px-4 py-2 mr-2"
+          onClick={() => handleEncrypt("elgamal")}
+          className="bg-green-500 text-white py-2 px-4 rounded"
+        >
+          Encrypt (ElGamal)
+        </button>
+        <button
           onClick={() => handleDecrypt("elgamal")}
+          className="bg-red-500 text-white py-2 px-4 rounded"
         >
-          Decrypt with ElGamal
+          Decrypt (ElGamal)
         </button>
         <button
-          className="bg-green-500 text-white px-4 py-2 mr-2"
+          onClick={() => handleEncrypt("vernam")}
+          className="bg-green-500 text-white py-2 px-4 rounded"
+        >
+          Encrypt (Vernam)
+        </button>
+        <button
           onClick={() => handleDecrypt("vernam")}
+          className="bg-red-500 text-white py-2 px-4 rounded"
         >
-          Decrypt with Vernam
+          Decrypt (Vernam)
         </button>
         <button
-          className="bg-green-500 text-white px-4 py-2"
-          onClick={() => handleDecrypt("rsa")}
+          onClick={() => handleEncrypt("rsa")}
+          className="bg-green-500 text-white py-2 px-4 rounded"
         >
-          Decrypt with RSA
+          Encrypt (RSA)
+        </button>
+        <button
+          onClick={() => handleDecrypt("rsa")}
+          className="bg-red-500 text-white py-2 px-4 rounded"
+        >
+          Decrypt (RSA)
         </button>
       </div>
 
-      <textarea
-        className="w-full p-2 border mb-4"
-        rows={4}
-        value={decryptedData}
-        readOnly
-        placeholder="Decrypted data will appear here"
-      />
+      <div className="mt-5">
+        <h2 className="text-xl font-bold mb-2">Encrypted Data:</h2>
+        <textarea
+          value={encryptedData}
+          readOnly
+          rows={5}
+          className="w-full p-2 mb-5 border border-gray-300"
+        />
 
-      <div className="mt-4">
-        <button
-          className="bg-gray-500 text-white px-4 py-2 mr-2"
-          onClick={() => handleFileDownload("encrypted.txt", encryptedData)}
-        >
-          Download Encrypted File
-        </button>
-        <button
-          className="bg-gray-500 text-white px-4 py-2"
-          onClick={() => handleFileDownload("decrypted.txt", decryptedData)}
-        >
-          Download Decrypted File
-        </button>
+        <h2 className="text-xl font-bold mb-2">Decrypted Data:</h2>
+        <textarea
+          value={decryptedData}
+          readOnly
+          rows={5}
+          className="w-full p-2 border border-gray-300"
+        />
+
+        <div className="mt-5">
+          <button
+            onClick={() => handleFileDownload("encrypted.txt", encryptedData)}
+            className="bg-blue-500 text-white py-2 px-4 rounded"
+          >
+            Download Encrypted Data
+          </button>
+        </div>
       </div>
     </div>
   );
