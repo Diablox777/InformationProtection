@@ -5,7 +5,7 @@ const App = () => {
   const [encryptedData, setEncryptedData] = useState<string>("");
   const [decryptedData, setDecryptedData] = useState<string>("");
 
-  // Вспомогательная функция для возведения в степень по модулю
+  // Helper function for modular exponentiation
   const modPow = (base: bigint, exp: bigint, mod: bigint): bigint => {
     let result = 1n;
     base = base % mod;
@@ -19,21 +19,7 @@ const App = () => {
     return result;
   };
 
-  // Shamir's Secret Sharing Encryption/Decryption Example
-  const shamirEncrypt = (data: string): string => {
-    const p = 257n; // Простое число
-    const c1 = 3n; // Первый частный ключ
-    const c2 = 5n; // Второй частный ключ
-
-    // Шифруем каждый символ
-    const encrypted = Array.from(data).map((char) =>
-      modPow(BigInt(char.charCodeAt(0)), c1 * c2, p).toString()
-    );
-
-    return encrypted.join(",");
-  };
-
-  // Вспомогательная функция для нахождения обратного числа по модулю с использованием расширенного алгоритма Евклида
+  // Helper function for modular inverse using extended Euclidean algorithm
   const modInverse = (a: bigint, m: bigint): bigint => {
     let [m0, x0, x1] = [m, 0n, 1n];
     if (m === 1n) return 0n;
@@ -48,15 +34,29 @@ const App = () => {
     return x1;
   };
 
+  // Shamir's Secret Sharing Encryption/Decryption Example
+  const shamirEncrypt = (data: string): string => {
+    const p = 257n; // Prime number
+    const c1 = 3n; // First private key
+    const c2 = 5n; // Second private key
+
+    // Encrypt each character
+    const encrypted = Array.from(data).map((char) =>
+      modPow(BigInt(char.charCodeAt(0)), c1 * c2, p).toString()
+    );
+
+    return encrypted.join(",");
+  };
+
   const shamirDecrypt = (data: string): string => {
     const p = 257n;
     const c1 = 3n;
     const c2 = 5n;
 
-    // Расчет обратного элемента для c1 * c2 по модулю (p-1)
+    // Calculate modular inverse of c1 * c2 modulo (p-1)
     const inverse = modInverse(c1 * c2, p - 1n);
 
-    // Расшифровываем каждый символ
+    // Decrypt each character
     const decrypted = data
       .split(",")
       .map((char) =>
@@ -70,16 +70,15 @@ const App = () => {
 
   // ElGamal Encryption/Decryption Example
   const elGamalEncrypt = (data: string): string => {
-    // Определяем основные параметры
     const p = 257n;
     const g = 3n;
     const x = 5n;
     const y = modPow(g, x, p);
 
-    const k = 7n; // Секретный ключ
+    const k = 7n; // Secret key
     const c1 = modPow(g, k, p);
 
-    // Шифруем каждый символ
+    // Encrypt each character
     const encrypted = Array.from(data).map((char) => {
       const m = BigInt(char.charCodeAt(0));
       const c2 = (m * modPow(y, k, p)) % p;
@@ -93,7 +92,7 @@ const App = () => {
     const p = 257n;
     const x = 5n;
 
-    // Расшифровываем каждый символ
+    // Decrypt each character
     const decrypted = data.split(";").map((pair) => {
       const [c1, c2] = pair.split(",").map(BigInt);
       const m = (c2 * modPow(c1, p - 1n - x, p)) % p;
@@ -105,7 +104,7 @@ const App = () => {
 
   // Vernam Cipher (XOR Cipher) Encryption/Decryption Example
   const vernamEncrypt = (data: string): string => {
-    const key = 42; // Простое значение ключа для XOR
+    const key = 42; // Simple XOR key
     const encrypted = Array.from(data).map(
       (char) => String.fromCharCode(char.charCodeAt(0) ^ key)
     );
@@ -113,7 +112,7 @@ const App = () => {
   };
 
   const vernamDecrypt = (data: string): string => {
-    const key = 42; // Используем тот же ключ
+    const key = 42; // Use the same key
     const decrypted = Array.from(data).map(
       (char) => String.fromCharCode(char.charCodeAt(0) ^ key)
     );
@@ -147,7 +146,31 @@ const App = () => {
     return decrypted.join("");
   };
 
-  // Обработчик шифрования
+  // Handle file upload and processing
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setData(reader.result);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleFileDownload = (filename: string, content: string) => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Encrypt handler
   const handleEncrypt = (algorithm: string) => {
     let result = "";
     switch (algorithm) {
@@ -169,7 +192,7 @@ const App = () => {
     setEncryptedData(result);
   };
 
-  // Обработчик дешифрования
+  // Decrypt handler
   const handleDecrypt = (algorithm: string) => {
     let result = "";
     switch (algorithm) {
@@ -194,6 +217,14 @@ const App = () => {
   return (
     <div className="p-10 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">File Encryption</h1>
+
+      <div className="mb-4">
+        <input
+          type="file"
+          accept=".txt,.json,.csv,.xml" // Add any file types you need
+          onChange={handleFileUpload}
+        />
+      </div>
 
       <textarea
         className="w-full p-2 border mb-4"
@@ -266,12 +297,27 @@ const App = () => {
       </div>
 
       <textarea
-        className="w-full p-2 border"
+        className="w-full p-2 border mb-4"
         rows={4}
         value={decryptedData}
         readOnly
         placeholder="Decrypted data will appear here"
       />
+
+      <div className="mt-4">
+        <button
+          className="bg-gray-500 text-white px-4 py-2 mr-2"
+          onClick={() => handleFileDownload("encrypted.txt", encryptedData)}
+        >
+          Download Encrypted File
+        </button>
+        <button
+          className="bg-gray-500 text-white px-4 py-2"
+          onClick={() => handleFileDownload("decrypted.txt", decryptedData)}
+        >
+          Download Decrypted File
+        </button>
+      </div>
     </div>
   );
 };
