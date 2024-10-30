@@ -28,11 +28,10 @@ def ElGamal_sign(m) -> list:
     keys['gamal_sign'] = {'p': p, 'g': g, 'y': y, 'r': r}
 
     h = hashlib.md5(m).hexdigest()
-    print('Sign:')
-    print(f'ElGamal md5 hash: {h}')
-    # числовое представление хэш функции для проверки подлинности
+    print('Подпись:')
+    print(f'Эль-Гамаль хеш md5: {h}')
     h_b = ''.join(str(pow_module(g, int(i, 16), p)) for i in h)
-    print(f'Sign: ElGamal md5 hash numeric representation: {h_b}')
+    print(f'Подпись: Эль-Гамаль числовое представление хеша md5: {h_b}')
 
     u = [(int(i, 16) - x * r) % (p - 1) for i in h]
     s = [(gcd_modified(k, p - 1)[1] * i) % (p - 1) for i in u]
@@ -45,21 +44,19 @@ def ElGamal_signcheck(m: bytearray, s: list):
     y = keys["gamal_sign"]["y"]
     r = keys["gamal_sign"]["r"]
     g = keys["gamal_sign"]["g"]
-    # Хэш функция проверяемого сообщения
-    h = hashlib.md5(m).hexdigest()
-    print('Unsign:')
-    print(f'ElGamal md5 hash: {h}')
-    # числовое представление хэш функции для проверки подлинности
-    h_b = ''.join(str(pow_module(g, int(i, 16), p)) for i in h)
-    print(f'ElGamal md5 hash numeric representation: {h_b}')
-    res = ''.join(str(pow_module(y, r, p) * pow_module(r, i, p) % p) for i in s)
-    print(f'ElGamal authenticity check: {res}')
 
-    print("Result of authenticity check: " + ("same" if res == h_b else "fake"))
+    h = hashlib.md5(m).hexdigest()
+    print('Проверка подписи:')
+    print(f'Эль-Гамаль хеш md5: {h}')
+    h_b = ''.join(str(pow_module(g, int(i, 16), p)) for i in h)
+    print(f'Эль-Гамаль числовое представление хеша md5: {h_b}')
+    res = ''.join(str(pow_module(y, r, p) * pow_module(r, i, p) % p) for i in s)
+    print(f'Проверка подлинности Эль-Гамаля: {res}')
+
+    print("Результат проверки подлинности: " + ("совпадает" if res == h_b else "подделка"))
 
 
 def RSA_sign(m) -> list:
-
     P = generate_prime(0, 10 ** 9)
     print("P = ", P)
     Q = generate_prime(0, 10 ** 9)
@@ -67,7 +64,7 @@ def RSA_sign(m) -> list:
     N = P * Q
     print("N = ", N)
     Phi = (P - 1) * (Q - 1)
-    print("Phi = ", Phi)
+    print("Фи = ", Phi)
 
     d = generate_coprime(Phi)
     print("d = ", d)
@@ -75,15 +72,12 @@ def RSA_sign(m) -> list:
     if c < 0:
         c += Phi
     print("c = ", c)
-    keys['RSA_sign'] = {'N': N, 'd': d}  # , 'P': P, 'Q': Q, 'Phi': Phi, 'c': c}
-    # Хэш функция подписанного сообщения
+    keys['RSA_sign'] = {'N': N, 'd': d}
     h = hashlib.md5(m).hexdigest()
-    print('Sign:')
-    print(f'RSA md5 hash: {h}')
-    # числовое представление хэш функции для проверки подлинности
+    print('Подпись:')
+    print(f'RSA хеш md5: {h}')
     h_b = ''.join(str(int(i, 16)) for i in h)
-    print(f'RSA md5 hash numeric representation: {h_b}')
-    # наша подпись
+    print(f'RSA числовое представление хеша md5: {h_b}')
     s = [pow_module(int(i, 16), c, N) for i in h]
 
     return s
@@ -92,17 +86,15 @@ def RSA_sign(m) -> list:
 def RSA_signcheck(m: bytearray, s: list):
     d = keys["RSA_sign"]["d"]
     N = keys["RSA_sign"]["N"]
-    # Хэш функция проверяемого сообщения
     h = hashlib.md5(m).hexdigest()
-    print('Unsign:')
-    print(f'RSA md5 hash: {h}')
-    # числовое представление хэш функции для проверки подлинности
+    print('Проверка подписи:')
+    print(f'RSA хеш md5: {h}')
     h_b = ''.join(str(int(i, 16)) for i in h)
-    print(f'RSA md5 hash numeric representation: {h_b}')
+    print(f'RSA числовое представление хеша md5: {h_b}')
     e = ''.join(str(pow_module(i, d, N)) for i in s)
-    print(f'RSA authenticity check: {e}')
+    print(f'Проверка подлинности RSA: {e}')
 
-    print("Result of authenticity check: " + ("same" if e == h_b else "fake"))
+    print("Результат проверки подлинности: " + ("совпадает" if e == h_b else "подделка"))
 
 
 def GOST_sign(m: bytearray) -> bool:
@@ -128,7 +120,7 @@ def GOST_sign(m: bytearray) -> bool:
     print("y = ", y)
 
     h = hashlib.md5(m).hexdigest()
-    print(f'GOST md5 hash: {h}')
+    print(f'ГОСТ хеш md5: {h}')
     h = int(h, 16)
 
     r = 0
@@ -153,7 +145,6 @@ def GOST_signcheck(m: bytearray, s: list):
     r = keys["GOST_sign"]["r"]
     a = keys["GOST_sign"]["a"]
     p = keys["GOST_sign"]["p"]
-    # Хэш функция проверяемого сообщения
     h = hashlib.md5(m).hexdigest()
 
     temp = gcd_modified(h, q)[1]
@@ -165,7 +156,7 @@ def GOST_signcheck(m: bytearray, s: list):
     u2 = (-r * temp) % q
     v = ((pow_module(a, u1, p) * pow_module(y, u2, p)) % p) % q
 
-    print("Result of authenticity check: " + ("same" if v == r else "fake"))
+    print("Результат проверки подлинности: " + ("совпадает" if v == r else "подделка"))
 
 
 if __name__ == '__main__':
