@@ -1,5 +1,3 @@
-import sys
-sys.path.append('C:WORK/sibguti/7 semestr/InformationProtection/LAB2/lab1.py')
 from lab1 import *
 import os
 import shutil
@@ -22,8 +20,10 @@ def Shamir_encode(m) -> list:
     result = list()
 
     p = generate_prime(0, 10 ** 9)
+    # p = 23
     print("p = ", p)
     Ca = generate_coprime(p - 1)
+    # Ca = 7
     print("Ca = ", Ca)
     Da = gcd_modified(p - 1, Ca)[2]
     if Da < 0:
@@ -43,6 +43,9 @@ def Shamir_encode(m) -> list:
         x2 = pow_module(x1, Cb, p)
         x3 = pow_module(x2, Da, p)
         result.append(x3)
+        # print("x1 = ", x1)
+        # print("x2 = ", x2)
+        # print("x3 = ", x3)
     return result
 
 
@@ -52,8 +55,10 @@ def Shamir_decode(x3) -> list:
     p = keys["shamir"]["p"]
     Db = keys["shamir"]["Db"]
     for part in x3:
+        # print(part)
         x4 = pow_module(part, Db, p)
         result.append(x4)
+        # print("x4 = ", x4)
     return result
 
 
@@ -80,11 +85,20 @@ def ElGamal_encode(m) -> list:
     print("k = ", k)
     a = pow_module(g, k, p)
     print("a = ", a)
+    # для теста
+    # y = 21
+    # x = 13
+    # p = 23
+    # g = 5
+    # k = 7
+    # a = 17
 
     keys['gamal'] = {'p': p, 'g': g, 'x': x, 'y': y, 'k': k, 'a': a}
     for part in m:
+        # print(part)
         b = (part * pow_module(y, k, p)) % p
         result.append(b)
+        # print("b = ", b)
     return result
 
 
@@ -95,8 +109,10 @@ def ElGamal_decode(b) -> list:
     x = keys["gamal"]["x"]
     a = keys["gamal"]["a"]
     for part in b:
+        # print(part)
         m1 = (part * pow_module(a, p - 1 - x, p)) % p
         result.append(m1)
+        # print("m1 = ", m1)
     return result
 
 
@@ -108,6 +124,8 @@ def RSA_encode(m) -> list:
     print("P = ", P)
     Q = generate_prime(0, 10 ** 9)
     print("Q = ", Q)
+    # P = 3
+    # Q = 11
     N = P * Q
     print("N = ", N)
     Phi = (P - 1) * (Q - 1)
@@ -121,10 +139,12 @@ def RSA_encode(m) -> list:
         c += Phi
     print("c = ", c)
 
-    keys['RSA'] = {'c': c, 'N': N}
+    keys['RSA'] = {'c': c, 'N': N}  # 'P': P, 'Q': Q, 'Phi': Phi, 'd': d}
     for part in m:
+        # print(part)
         e = pow_module(part, d, N)
         result.append(e)
+        # print("e = ", e)
     return result
 
 
@@ -134,6 +154,7 @@ def RSA_decode(e) -> list:
     c = keys["RSA"]["c"]
     N = keys["RSA"]["N"]
     for part in e:
+        # print(part)
         m1 = pow_module(part, c, N)
         result.append(m1)
     print("m1 = ", m1)
@@ -160,48 +181,51 @@ def read_file(filename: str, ext: str) -> bytearray:
 
 
 if __name__ == '__main__':
+    # print(gcd(22,5))
+    # print(generate_coprime(p-1))
     try:
         shutil.rmtree('..\encode')
     except OSError:
         pass
     os.mkdir('..\encode')
 
-    filename = '.\input'
+    filename = '..\input'
     ext = 'txt'
     m = read_file(filename, ext)
+    print(m)
 
     sham_enc = Shamir_encode(m)
-    #print(sham_enc)
+    print(sham_enc)
     with open(r'..\encode\shamir_encoded.txt', 'wt') as encode_file:
         encode_file.write(str(sham_enc))
     sham_dec = Shamir_decode(sham_enc)
-    #print(bytearray(sham_dec))
+    print(bytearray(sham_dec))
     with open(r'..\encode\shamir_decoded.txt', 'wb') as decode_file:
         decode_file.write(bytearray(sham_dec))
 
     gam_enc = ElGamal_encode(m)
-    #print(gam_enc)
+    print(gam_enc)
     with open(r'..\encode\gamal_encoded.txt', 'wt') as encode_file:
         encode_file.write(str(gam_enc))
     gam_dec = ElGamal_decode(gam_enc)
-    #print(bytearray(gam_dec))
+    print(bytearray(gam_dec))
     with open(r'..\encode\gamal_decoded.txt', 'wb') as decode_file:
         decode_file.write(bytearray(gam_dec))
 
     RSA_enc = RSA_encode(m)
-    #print(RSA_enc)
+    print(RSA_enc)
     with open(r'..\encode\rsa_encoded.txt', 'wt') as encode_file:
         encode_file.write(str(RSA_enc))
     RSA_dec = RSA_decode(RSA_enc)
-    #print(bytearray(RSA_dec))
+    print(bytearray(RSA_dec))
     with open(r'..\encode\rsa_decoded.txt', 'wb') as decode_file:
         decode_file.write(bytearray(RSA_dec))
 
     ver_enc = Vernam_encode(m)
-    #print(ver_enc)
+    print(ver_enc)
     with open(r'..\encode\ver_encoded.txt', 'wt') as encode_file:
         encode_file.write(str(ver_enc))
     ver_dec = Vernam_decode(ver_enc)
-    #print(bytearray(ver_dec))
+    print(bytearray(ver_dec))
     with open(r'..\encode\ver_decoded.txt', 'wb') as decode_file:
         decode_file.write(bytearray(ver_dec))

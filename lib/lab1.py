@@ -30,9 +30,9 @@ def pow_module(a, x, p):
     result = 1
     a = a % p
     if a == 0:
-        return 0
+        return 0;
     while x > 0:
-        if x & 1 == 1:  
+        if x & 1 == 1:  # если крайний правый бит степени равен lib
             result = (result * a) % p
         a = (a ** 2) % p
         x >>= 1  # побитово смещаем степень
@@ -76,8 +76,8 @@ def diffie_hellman_algorithm():
         g = random.randint(2, p - 1)
     print(f"g = {g}\n")
 
-    Xa = random.randint(1, p)  
-    Xb = random.randint(1, p)  
+    Xa = random.randint(1, p)  # generate_prime(lib, p)
+    Xb = random.randint(1, p)  # generate_prime(lib, p)
     print(f"Закрытые ключи:\nXa = {Xa}\nXb = {Xb}\n")
 
     Ya = pow_module(g, Xa, p)
@@ -106,12 +106,11 @@ def giant_baby_step(a, p, y):
 
 
 if __name__ == '__main__':
-    #print(check_prime(561))
-    #print(pow_module(5, 20, 7))
-    #print(gcd(28,19))
-    #print(gcd_modified(30, 18))
-    #print(pow_module(4, 2, 3))
-    #print(generate_prime(1, 7))
-    #diffie_hellman_algorithm()
+    # print(pow_module(5, 20, 7))
+    # print(gcd(28,19))
+    print(gcd(2, 3))
+    print(pow_module(4, 2, 3))
+    print(generate_prime(1, 7))
+    # diffie_hellman_algorithm()
 
-    print(giant_baby_step(3, 15, 29))
+    # print(giant_baby_step(88, 107, 47))
