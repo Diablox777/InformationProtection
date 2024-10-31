@@ -3,6 +3,11 @@ import shutil  # Модуль для операций с файлами и ди�
 import hashlib  # Модуль для создания хешей
 from lab2 import *  # Импорт всех функций из файла lab2 (должен содержать используемые математические функции)
 
+def read_file(file_path, extension):
+    full_path = f"{file_path}.{extension}"
+    with open(full_path, 'rb') as f:
+        return f.read()
+
 # Функция для создания цифровой подписи с использованием алгоритма Эль-Гамаля
 def ElGamal_sign(message) -> list:
     generator = 0  # Инициализация генератора для циклической группы
@@ -106,12 +111,15 @@ def RSA_signcheck(message: bytearray, signature: list):
     print("RSA Verification Result:", "Valid" if verification_result == hash_numeric else "Forgery Detected")
 
 
-# Функция для создания цифровой подписи с использованием ГОСТ
 def GOST_sign(message: bytearray) -> bool:
     # Инициализация простых чисел p и q для алгоритма ГОСТ
     prime_q = random.getrandbits(16)
     multiplier_b = random.getrandbits(16)
-    while not check_prime(prime_q * multiplier_b + 1):
+    
+    # Инициализация prime_p
+    prime_p = None
+    
+    while prime_p is None or not check_prime(prime_p):
         multiplier_b = random.getrandbits(16)
         prime_p = prime_q * multiplier_b + 1
 
@@ -181,32 +189,53 @@ if __name__ == '__main__':
     except OSError:
         pass
     os.mkdir(r'..\signs')  # Создание новой директории для хранения подписей
-    input_filename = r'..\input'
-    fake_filename = r"..\input_fake"
+
+    # Определение базовой директории
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    input_filename = os.path.join(current_dir, '..', 'input')
+    fake_filename = os.path.join(current_dir, '..', 'input_fake')
     file_extension = 'txt'
-    
+
     # Чтение содержимого файлов
-    message = read_file(input_filename, file_extension)
-    fake_message = read_file(fake_filename, file_extension)
+    try:
+        message = read_file(input_filename, file_extension)
+        fake_message = read_file(fake_filename, file_extension)
+    except FileNotFoundError as e:
+        print(f"Ошибка: {e}. Проверьте, что файлы {input_filename}.txt и {fake_filename}.txt существуют.")
+        exit()  # Завершение программы, если файлы не найдены
 
     # Генерация и проверка RSA подписи
     print("Original Message Signature:")
     print(message)
     print()
-    signature = RSA_sign(message)
+    rsa_signature = RSA_sign(message)
     with open(r'..\signs\rsa_sign.txt', 'w') as f:
-        f.write(str(signature))
-    RSA_signcheck(message, signature)
+        f.write(str(rsa_signature))
+    RSA_signcheck(message, rsa_signature)
     print("\n")
 
     # Генерация и проверка подписи Эль-Гамаля
     print("ElGamal Signature:")
-    signature = ElGamal_sign(message)
+    elgamal_signature = ElGamal_sign(message)
     with open(r'..\signs\elgamal_sign.txt', 'w') as f:
-        f.write(str(signature))
-    ElGamal_signcheck(message, signature)
+        f.write(str(elgamal_signature))
+    ElGamal_signcheck(message, elgamal_signature)
     print("\n")
 
     # Генерация и проверка подписи ГОСТ
     print("GOST Signature:")
-    GOST_sign(message)
+    gost_signature = GOST_sign(message)
+
+    # Создание файла Input_sign.txt с оригинальным сообщением и подписями
+    with open(os.path.join(current_dir, '..', 'Input_sign.txt'), 'wb') as f:
+        with open(os.path.join(current_dir, '..', 'Input_sign.txt'), 'w', encoding='utf-8') as f:
+            f.write("Original Message:\n")
+            f.write(message.decode('utf-8', errors='replace') + "\n\n")  # Предполагаем, что message это байты
+            f.write("RSA Signature:\n")
+            f.write(str(rsa_signature) + "\n\n")  # Добавление подписи
+            f.write("ElGamal Signature:\n")
+            f.write(str(elgamal_signature) + "\n\n")
+            f.write("GOST Signature:\n")
+            f.write(str(gost_signature) + "\n")
+
+    print("Signatures saved to Input_sign.txt")
