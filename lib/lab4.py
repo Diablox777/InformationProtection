@@ -4,6 +4,11 @@ from lab3 import *
 import random
 from collections import Counter
 
+# Список возможных имен для игроков
+names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Heidi", "Ivy", "Jack",
+         "Kathy", "Leo", "Mona", "Nick", "Olivia", "Paul", "Quincy", "Rachel", "Sam", "Tina",
+         "Ursula", "Vera", "Wendy", "Xander", "Yara", "Zane", "Aaron", "Beatrice", "Carl", "Diana"]
+
 def gen_deck() -> dict:
     suits = ['♠', '♣', '♥', '♦']
     faces = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -96,18 +101,41 @@ def mental_poker(players_num):
             if i != j:
                 hands[i] = [pow_module(card, D[j], p) for card in hands[i]]
         hands[i] = [origin_deck[pow_module(card, D[i], p)] for card in hands[i]]
-    
+
     winner_index, ranks = determine_winner(hands, table)
     display_results(hands, table, winner_index)
 
 def display_results(hands, table, winner_index):
     result_frame.delete(1.0, tk.END)
+    
+    # Мешаем список имен
+    shuffled_names = random.sample(names, len(hands))
+    
     for i, hand in enumerate(hands):
+        hand_text = f"{shuffled_names[i]} Hand: "  # Используем случайное имя
+        result_frame.insert(tk.END, hand_text)
+
+        for card in hand:
+            # Определяем цвет масти
+            if card[0] in ['♥', '♦']:
+                result_frame.insert(tk.END, card + " ", "red")
+            else:
+                result_frame.insert(tk.END, card + " ", "black")
+        
+        # Отмечаем победителя
         if i == winner_index:
-            result_frame.insert(tk.END, f"Player {i + 1} Hand: {', '.join(hand)}\n", "winner")
+            result_frame.insert(tk.END, " - Winner", "winner")
+        result_frame.insert(tk.END, "\n")
+
+    # Отображаем карты на столе
+    result_frame.insert(tk.END, "\nTable Cards: ")
+    for card in table.values():
+        if card[0] in ['♥', '♦']:
+            result_frame.insert(tk.END, card + " ", "red")
         else:
-            result_frame.insert(tk.END, f"Player {i + 1} Hand: {', '.join(hand)}\n")
-    result_frame.insert(tk.END, f"\nTable Cards: {', '.join(table.values())}\n")
+            result_frame.insert(tk.END, card + " ", "black")
+    result_frame.insert(tk.END, "\n")
+
 
 def start_game():
     try:
@@ -118,17 +146,15 @@ def start_game():
     except ValueError as e:
         messagebox.showerror("Ошибка", str(e))
 
-# Создаем графический интерфейс
+# Интерфейс
 root = tk.Tk()
 root.title("Mental Poker Game")
 root.geometry("600x500")
 root.configure(bg="#2E3440")
 
-# Заголовок
 title_label = tk.Label(root, text="Mental Poker Game", font=("Helvetica", 18, "bold"), fg="#88C0D0", bg="#2E3440")
 title_label.pack(pady=(20, 10))
 
-# Поле ввода числа игроков
 input_frame = tk.Frame(root, bg="#3B4252", padx=20, pady=10)
 input_frame.pack(pady=(0, 10))
 
@@ -138,21 +164,13 @@ players_label.grid(row=0, column=0, padx=5, pady=5)
 players_entry = tk.Entry(input_frame, font=("Helvetica", 12), width=5)
 players_entry.grid(row=0, column=1, padx=5, pady=5)
 
-# Кнопка запуска игры
 start_button = tk.Button(root, text="Start Game", command=start_game, font=("Helvetica", 12), bg="#4C566A", fg="#D8DEE9")
 start_button.pack(pady=10)
 
-# Результаты игры
 result_frame = tk.Text(root, font=("Helvetica", 12), width=60, height=15, bg="#3B4252", fg="#D8DEE9", bd=0, padx=10, pady=10, wrap="word")
 result_frame.tag_configure("winner", foreground="#A3BE8C", font=("Helvetica", 12, "bold"))
+result_frame.tag_configure("red", foreground="red")
+result_frame.tag_configure("black", foreground="black")
 result_frame.pack(pady=10)
-
-# Устанавливаем стиль и отступы для основного окна
-root.option_add("*Font", "Helvetica 12")
-root.option_add("*Label.Font", "Helvetica 12")
-root.option_add("*Entry.Font", "Helvetica 12")
-root.option_add("*Button.Font", "Helvetica 12 bold")
-root.option_add("*Button.Background", "#4C566A")
-root.option_add("*Button.Foreground", "#D8DEE9")
 
 root.mainloop()
