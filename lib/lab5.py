@@ -4,7 +4,7 @@ from sys import byteorder
 from math import ceil
 import collections
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 from lab4 import *
 
 # Оригинальная серверная логика
@@ -78,39 +78,47 @@ class VotingApp:
 
     def init_ui(self):
         self.root.title("Протокол «Слепая подпись»")
-        self.root.geometry("600x500")
+        self.root.attributes('-fullscreen', True)  # Окно на весь экран
+        self.root.configure(bg="#e0f7fa")  # Легкий голубой фон
 
         # Заголовок
-        title_label = tk.Label(self.root, text="Электронное голосование", font=("Arial", 18, "bold"), fg="#4CAF50")
+        title_label = tk.Label(self.root, text="Электронное голосование", font=("Arial", 24, "bold"), fg="#00796b", bg="#e0f7fa")
         title_label.pack(pady=20)
 
         # Поле для имени
-        self.name_input = tk.Entry(self.root, font=("Arial", 12))
+        self.name_input = tk.Entry(self.root, font=("Arial", 14), fg="#00796b", bd=2, relief="solid")
         self.name_input.insert(0, "Введите имя избирателя")
-        self.name_input.pack(pady=10)
+        self.name_input.pack(pady=10, ipadx=10, ipady=5)
 
         # Выбор варианта
         self.vote_combo = tk.StringVar()
         self.vote_combo.set("Yes")
         vote_options = ["Yes", "No", "Abstain"]
         self.vote_dropdown = tk.OptionMenu(self.root, self.vote_combo, *vote_options)
-        self.vote_dropdown.config(font=("Arial", 12))
+        self.vote_dropdown.config(font=("Arial", 14), width=20, relief="solid")
         self.vote_dropdown.pack(pady=10)
 
         # Кнопка для голосования
-        self.vote_button = tk.Button(self.root, text="Проголосовать", font=("Arial", 12), bg="#4CAF50", fg="white", command=self.on_vote_click)
-        self.vote_button.pack(pady=10)
+        self.vote_button = tk.Button(self.root, text="Проголосовать", font=("Arial", 14), bg="#00796b", fg="white", relief="raised", command=self.on_vote_click)
+        self.vote_button.pack(pady=20)
 
         # Вывод отчета
-        self.result_output = tk.Text(self.root, font=("Arial", 12), width=70, height=10, wrap=tk.WORD, state=tk.DISABLED)
+        self.result_output = tk.Text(self.root, font=("Arial", 12), width=70, height=10, wrap=tk.WORD, state=tk.DISABLED, bd=2, relief="solid", bg="#ffffff")
         self.result_output.pack(pady=10)
 
         # Результат голосования
-        self.result_label = tk.Label(self.root, text="Результат голосования:", font=("Arial", 14, "bold"))
+        self.result_label = tk.Label(self.root, text="Результат голосования:", font=("Arial", 18, "bold"), fg="#00796b", bg="#e0f7fa")
         self.result_label.pack(pady=10)
 
-        self.result_display = tk.Text(self.root, font=("Arial", 12), width=70, height=6, wrap=tk.WORD, state=tk.DISABLED)
+        self.result_display = tk.Text(self.root, font=("Arial", 12), width=70, height=6, wrap=tk.WORD, state=tk.DISABLED, bd=2, relief="solid", bg="#ffffff")
         self.result_display.pack(pady=10)
+
+        # Окно для отображения ключевых чисел
+        self.keys_output_label = tk.Label(self.root, text="Ключевые числа:", font=("Arial", 14, "bold"), fg="#00796b", bg="#e0f7fa")
+        self.keys_output_label.pack(pady=10)
+
+        self.keys_output = tk.Text(self.root, font=("Arial", 12), width=70, height=6, wrap=tk.WORD, state=tk.DISABLED, bd=2, relief="solid", bg="#ffffff")
+        self.keys_output.pack(pady=10)
 
     def on_vote_click(self):
         name = self.name_input.get().strip()
@@ -140,6 +148,14 @@ class VotingApp:
         for voter in self.server.voted:
             self.result_output.insert(tk.END, f"{voter}\n")
         self.result_output.config(state=tk.DISABLED)
+
+        # Отображение ключевых чисел
+        self.keys_output.config(state=tk.NORMAL)
+        self.keys_output.delete(1.0, tk.END)
+        self.keys_output.insert(tk.END, f"N: {self.server.N}\n")
+        self.keys_output.insert(tk.END, f"D: {self.server.D}\n")
+        self.keys_output.insert(tk.END, f"C: {self.server.C}\n")
+        self.keys_output.config(state=tk.DISABLED)
 
 
 if __name__ == "__main__":
