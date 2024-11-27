@@ -1,38 +1,38 @@
-from lab4 import *
+import random
+import hashlib
 from sys import byteorder
+from math import ceil
 import collections
+import tkinter as tk
+from tkinter import messagebox
+from lab4 import *
 
+# Оригинальная серверная логика
 voting_options = {"No": 0, "Yes": 1, "Abstain": 2}
 voting_options_count = len(voting_options)
 
-
 class Server:
     def __init__(self):
-        # P = Q = 0
-        # while P == Q:
-            # P = generate_prime(0, 10 ** 9)
-            # print("P = ", P)
-            # Q = generate_prime(0, 10 ** 9)
-            # print("Q = ", Q)
         while P := random.getrandbits(512):
             if check_prime(P):
                 break
-        # print("P = ", P)
         while Q := random.getrandbits(512):
             if check_prime(Q):
                 break
-        # print("Q = ", Q)
         self.N = P * Q
-        print("N:", self.N)
         phi = (P - 1) * (Q - 1)
         self.D = generate_coprime(phi)
-        print("D:", self.D)
         self.C = gcd_modified(self.D, phi)[1]
         while self.C < 0:
             self.C += phi
         self.voted = set()
         self.blanks = list()
-        print(f'Сервер запущен')
+
+    def get_result(self):
+        counter = collections.Counter()
+        for blank in self.blanks:
+            counter[blank[0] & voting_options_count] += 1
+        return counter
 
 
 def my_sha(n: int) -> int:
@@ -47,12 +47,11 @@ def inverse(n: int, p: int) -> int:
     return inv
 
 
-def vote(name, choice):
-    print(f'\n#{name} голосует#')
+def vote(name, choice, server, result_output):
     if name in server.voted:
-        return print(f'Голос от избирателя {name} уже есть.')
+        result_output.insert(tk.END, f'Голос от избирателя {name} уже есть.\n')
+        return
 
-    # вычисление подписи
     rnd = random.getrandbits(256)
     v = voting_options[choice]
     n = rnd << 257 | v
@@ -60,37 +59,90 @@ def vote(name, choice):
     h = my_sha(n)
     _h = h * pow_module(r, server.D, server.N) % server.N
 
-    # отправление подписи на сервер
     server.voted.add(name)
     _s = pow_module(_h, server.C, server.N)
     s = _s * inverse(r, server.N) % server.N
 
-    print(f'#Ответ сервера-голосования#')
-    # blanks = set()
     if my_sha(n) == pow_module(s, server.D, server.N):
-        print(f'Голос принят.')
         server.blanks.append((n, s))
+        result_output.insert(tk.END, f'Голос от {name} принят.\n')
     else:
-        print(f'Голос отклонен')
-        print(my_sha(n))
-        print(pow_module(s, server.D, server.N))
+        result_output.insert(tk.END, f'Голос от {name} отклонён.\n')
 
 
-if __name__ == '__main__':
-    server = Server()
-    vote("Boris", "Abstain")
-    vote("Alice", "Yes")
-    vote("Mike", "No")
-    vote("Borisss", "No")
-    vote("MikeMike", "Yes")
+class VotingApp:
+    def __init__(self, root):
+        self.root = root
+        self.server = Server()
+        self.init_ui()
 
-    print("\nПроголосовавшие:")
-    for vote in server.voted:
-        print(vote)
-    counter = collections.Counter()
-    for blank in server.blanks:
-        counter[blank[0] & voting_options_count] += 1
-    print("\nРезультат голосования:")
-    print("За: \t\t ", counter[1])
-    print("Против:\t\t ", counter[0])
-    print("Воздержались:", counter[2])
+    def init_ui(self):
+        self.root.title("Протокол «Слепая подпись»")
+        self.root.geometry("600x500")
+
+        # Заголовок
+        title_label = tk.Label(self.root, text="Электронное голосование", font=("Arial", 18, "bold"), fg="#4CAF50")
+        title_label.pack(pady=20)
+
+        # Поле для имени
+        self.name_input = tk.Entry(self.root, font=("Arial", 12))
+        self.name_input.insert(0, "Введите имя избирателя")
+        self.name_input.pack(pady=10)
+
+        # Выбор варианта
+        self.vote_combo = tk.StringVar()
+        self.vote_combo.set("Yes")
+        vote_options = ["Yes", "No", "Abstain"]
+        self.vote_dropdown = tk.OptionMenu(self.root, self.vote_combo, *vote_options)
+        self.vote_dropdown.config(font=("Arial", 12))
+        self.vote_dropdown.pack(pady=10)
+
+        # Кнопка для голосования
+        self.vote_button = tk.Button(self.root, text="Проголосовать", font=("Arial", 12), bg="#4CAF50", fg="white", command=self.on_vote_click)
+        self.vote_button.pack(pady=10)
+
+        # Вывод отчета
+        self.result_output = tk.Text(self.root, font=("Arial", 12), width=70, height=10, wrap=tk.WORD, state=tk.DISABLED)
+        self.result_output.pack(pady=10)
+
+        # Результат голосования
+        self.result_label = tk.Label(self.root, text="Результат голосования:", font=("Arial", 14, "bold"))
+        self.result_label.pack(pady=10)
+
+        self.result_display = tk.Text(self.root, font=("Arial", 12), width=70, height=6, wrap=tk.WORD, state=tk.DISABLED)
+        self.result_display.pack(pady=10)
+
+    def on_vote_click(self):
+        name = self.name_input.get().strip()
+        choice = self.vote_combo.get()
+
+        if name == "" or name == "Введите имя избирателя":
+            messagebox.showerror("Ошибка", "Пожалуйста, введите имя избирателя.")
+            return
+
+        vote(name, choice, self.server, self.result_output)
+        
+        # Обновление результатов
+        self.update_results()
+
+    def update_results(self):
+        counter = self.server.get_result()
+        self.result_display.config(state=tk.NORMAL)
+        self.result_display.delete(1.0, tk.END)
+        self.result_display.insert(tk.END, f"За: {counter[1]}\n")
+        self.result_display.insert(tk.END, f"Против: {counter[0]}\n")
+        self.result_display.insert(tk.END, f"Воздержались: {counter[2]}\n")
+        self.result_display.config(state=tk.DISABLED)
+
+        # Обновляем список проголосовавших
+        self.result_output.config(state=tk.NORMAL)
+        self.result_output.insert(tk.END, "\nПроголосовавшие:\n")
+        for voter in self.server.voted:
+            self.result_output.insert(tk.END, f"{voter}\n")
+        self.result_output.config(state=tk.DISABLED)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = VotingApp(root)
+    root.mainloop()
