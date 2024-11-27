@@ -14,12 +14,14 @@ VOTING_OPTIONS_COUNT = len(VOTING_OPTIONS)
 # Система голосования (серверная часть)
 class VotingServer:
     def __init__(self):
-        self.N = self.generate_modulus()
-        self.D, self.C = self.generate_private_public_keys()
-        self.voted = set()
-        self.blanks = []
+        self.P, self.Q = self.generate_primes()  # Генерация простых чисел P и Q
+        self.N = self.P * self.Q  # Модуль для RSA
+        self.D, self.C = self.generate_private_public_keys()  # Генерация приватного и публичного ключа
+        self.voted = set()  # Множество проголосовавших
+        self.blanks = []  # Список для хранения голосов
 
-    def generate_modulus(self):
+    def generate_primes(self):
+        # Генерация простых чисел P и Q
         while True:
             P = random.getrandbits(512)
             if check_prime(P):
@@ -28,10 +30,11 @@ class VotingServer:
             Q = random.getrandbits(512)
             if check_prime(Q):
                 break
-        return P * Q
+        return P, Q  # Возвращаем P и Q как атрибуты
 
     def generate_private_public_keys(self):
-        phi = (self.P - 1) * (self.Q - 1)
+        # Генерация публичного и приватного ключей
+        phi = (self.P - 1) * (self.Q - 1)  # Эйлерова функция от N
         D = generate_coprime(phi)
         C = gcd_modified(D, phi)[1]
         while C < 0:
@@ -39,6 +42,7 @@ class VotingServer:
         return D, C
 
     def get_results(self):
+        # Подсчет голосов
         vote_counts = collections.Counter()
         for blank in self.blanks:
             vote_counts[blank[0] & VOTING_OPTIONS_COUNT] += 1
