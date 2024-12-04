@@ -109,8 +109,9 @@ if __name__ == '__main__':
     # print(pow_module(5, 20, 7))
     # print(gcd(28,19))
     print(gcd(2, 3))
-    print(pow_module(4, 2, 3))
+    print(pow_module(11, 77, 119))
     print(generate_prime(1, 7))
+    print(gcd_modified(5, 119))
     # diffie_hellman_algorithm()
 
     # print(giant_baby_step(88, 107, 47))
